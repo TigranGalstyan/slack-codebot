@@ -81,7 +81,8 @@ def handle_command(command, channel):
 								input = str(input)[:30] + '...'
 							else:
 								input = str(input)
-							response = 'Your answer for the problem ' + problem + ' was ' + ans + ' but correct answer is ' + _ans + ' for the input = ' + input
+							response = 'Your answer for the problem ' + problem + ' was ' + \
+							ans + ' but correct answer is ' + _ans + ' for the input = ' + input
 	
 							break
 					final_response += response + '\n'
@@ -105,7 +106,8 @@ def parse_slack_output(slack_rtm_output):
                 try:
                     if not output[u'user'] == BOT_ID:
                         output_text = output[u'text'].replace(AT_BOT,'').replace('&lt;', '<').replace('&gt;', '>')
-                        while len(output_text) > 0 and ( output_text[0] == ' ' or output_text[0] == '\n' or output_text[0] == '\t'):
+                        while len(output_text) > 0 and ( output_text[0] == ' ' or output_text[0] == '\n' \
+			      or output_text[0] == '\t'):
                             output_text = output_text[1:] 
                         return output_text, output[u'channel']
                 except:
