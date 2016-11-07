@@ -1,3 +1,6 @@
+import math
+import numpy as np
+import random
 def listSum(list): 
     return sum(list)
 
@@ -18,6 +21,8 @@ def isSquare(n):
 
 def isPrime(n):
     i = 2
+    if n < 2:
+	return False
     while i * i <= n:
         if n % i == 0:
             return False
@@ -31,7 +36,6 @@ def factorial(n):
     return s
 
 def diskArea(r):
-    import math
     return math.pi*r*r
 
 def numberOfVowels(s):
@@ -115,3 +119,6 @@ def cylinderSort(d):
 
 def primeList(l):
 	return sorted([x for x in l if isPrime(x)])
+
+def squareDiagonal(n):
+	return np.diag(np.arange(1,n+1)**2) + np.ones((n,n)) - np.eye(n)
