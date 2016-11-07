@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import utils
 import codecs
 import time
@@ -6,15 +8,10 @@ import json
 import traceback
 import requests
 import signal
-
-import urllib3.contrib.pyopenssl
-urllib3.contrib.pyopenssl.inject_into_urllib3()
-
-import numpy
+import numpy as np 
 import random
 import math
 
-# codebot's ID as an environment variable
 BOT_ID = " ***** " 
 
 # constants
@@ -35,13 +32,13 @@ def handler(signum, frame):
 
 def handle_command(command, channel):
 	if 'import' in command:
-		final_response = "Please do not import anything, everything you may need is already imported"
+		final_response = u"Please do not import anything, everything you may need is already imported"
 	elif 'exit' in command:
-		final_response = "Please do not use exit, I'm sure it's not even necessary here"
+		final_response = u"Please do not use exit, I'm sure it's not even necessary here"
 	elif 'eval' in command or 'exec' in command:
-		final_response = "Please do not use exec/eval, I'm sure it's not even necessary here"
+		final_response = u"Please do not use exec/eval, I'm sure it's not even necessary here"
 	else:
-		final_response = ""
+		final_response = u""
 		try:
 			signal.signal(signal.SIGALRM, handler)
 			signal.alarm(10)
@@ -61,13 +58,34 @@ def handle_command(command, channel):
 								correct_eval += "'" + i + "', "
 						user_eval = user_eval[:-2] + ')'
 						correct_eval = correct_eval[:-2] + ')'
+						#user_eval = 'ans = ' + user_eval
+						#correct_eval = '_ans = ' + correct_eval
 						ans = eval(user_eval, Globals, Locals)#, globals(),  locals())
 						_ans = eval(correct_eval, Globals, Locals)#,  globals(),  locals())
-						#print "[", ans, ":", _ans, "]"
+						#exec(user_eval, Globals, Locals)
+						#exec(correct_eval, Globals, Locals)
 						if type(ans) == type(int(1)):
 							ans = float(ans)
 						if type(_ans) == type(int(1)):
 							_ans = float(_ans)
+						if type(_ans).__module__ == np.__name__:
+							if type(ans).__module__ != np.__name__:
+								response = 'You had to return an answer in a numpy type'
+								break
+							if ans.shape == _ans.shape:
+								if np.allclose(ans,_ans) == False:
+									response = 'Your answer for the problem ' + problem + \
+										   ' was ' + str(ans) + ' but the correct answer is ' + \
+										   str(_ans) + ' for the input == ' + str(input[:30]) + \
+										   ('...' if len(str(input)) > 30 else '')
+									break
+							else:
+								response = 'The shape of your answer for the problem ' + problem + \
+									   ' was ' + str(ans.shape) + ' but the shape of the correct answer is ' + \
+									   str(_ans.shape) + ' for the input == ' + str(input[:30]) + \
+                                                                           ('...' if len(str(input)) > 30 else '')
+								break
+							continue
 						if str(ans) != str(_ans):
 							if len(str(ans)) > 30:
 								ans = str(ans)[:30] + '...'
@@ -82,8 +100,7 @@ def handle_command(command, channel):
 							else:
 								input = str(input)
 							response = 'Your answer for the problem ' + problem + ' was ' + \
-							ans + ' but correct answer is ' + _ans + ' for the input = ' + input
-	
+							ans + ' but the correct answer is ' + _ans + ' for the input = ' + input
 							break
 					final_response += response + '\n'
 			signal.alarm(0)
@@ -92,6 +109,7 @@ def handle_command(command, channel):
 			final_response += str( traceback.format_exc())
 	slack_client.api_call("chat.postMessage", channel=channel,
                           text=final_response, as_user=True)
+	return final_response
 
 
 def parse_slack_output(slack_rtm_output):
@@ -109,7 +127,7 @@ def parse_slack_output(slack_rtm_output):
                         while len(output_text) > 0 and ( output_text[0] == ' ' or output_text[0] == '\n' \
 			      or output_text[0] == '\t'):
                             output_text = output_text[1:] 
-                        return output_text, output[u'channel']
+                        return output_text.encode("utf-8"), output[u'user'].encode("utf-8")
                 except:
                     return None, None
     return None, None
@@ -122,9 +140,12 @@ if __name__ == "__main__":
         while True:
             t = slack_client.rtm_read()
             command, channel = parse_slack_output(t)
+	    #print command, channel
             if command and channel:
-                print command, channel
-                handle_command(command, channel)
+                print command
+                response = handle_command(command, channel)
+		print response
+		print channel
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
         print("Connection failed. Invalid Slack token or bot ID?")
